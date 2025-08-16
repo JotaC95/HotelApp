@@ -37,6 +37,20 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # *********** AÑADIDO ******************+
+    # Terceros
+    "rest_framework",
+    "django_filters",
+    "corsheaders",
+    "drf_spectacular",
+    "channels",
+    # Locales
+    "core",
+    "accounts",
+    "housekeeping",
+    
+    # *********** FIN AÑADIDO ******************+
 ]
 
 MIDDLEWARE = [
@@ -47,6 +61,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    # *********** AÑADIDO ******************+
+    "corsheaders.middleware.CorsMiddleware", #CORS (modo desarrollo) 
+    # *********** FIN AÑADIDO ******************+
 ]
 
 ROOT_URLCONF = 'hotelflow.urls'
@@ -120,3 +138,32 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ************** AÑADIDO DESARROLLO *******************
+REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
+    "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser", "rest_framework.parsers.MultiPartParser"],
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+SPECTACULAR_SETTINGS = {
+    "TITLE": "HotelFlow API",
+    "DESCRIPTION": "API para logística y eficiencia hotelera",
+    "VERSION": "0.1.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
+
+CORS_ALLOW_ALL_ORIGINS = True #CORS (modo desarrollo) añadido
+
+# ASGI / Channels
+ASGI_APPLICATION = "hotelflow.asgi.application"
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+
+AUTH_USER_MODEL = "accounts.User"
+
+# ************* Media *************
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+# ************* FIN AÑADIDO ******************+
