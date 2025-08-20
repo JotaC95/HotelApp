@@ -1,15 +1,7 @@
+// src/screens/RoomDetailScreen.tsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-    View,
-    Text,
-    FlatList,
-    RefreshControl,
-    TouchableOpacity,
-    Alert,
-    Modal,
-    TextInput,
-} from "react-native";
-import { makeClient } from "../api";
+import { View, Text, FlatList, RefreshControl, TouchableOpacity, Alert, Modal, TextInput } from "react-native";
+import { getClient } from "../api"; // <--- usar getClient
 
 type Room = { id:number; number:string; floor:number; status:string; zone?:string };
 
@@ -45,21 +37,14 @@ export default function RoomDetailScreen({ route }: any) {
         }
     }, [room]);
 
-    /**
-     * Carga habitación y tareas desde el backend
-     * GET /api/housekeeping/rooms/{id}/
-     * GET /api/housekeeping/tasks/?room={roomId}
-     */
     const fetchAll = useCallback(async () => {
         setLoading(true);
         try {
-        const client = await makeClient();
+        const client = await getClient();
 
-        // Detalle habitación
         const r = await client.get(`/rooms/${roomId}/`);
         setRoom(r.data);
 
-        // Tareas de la habitación (si el backend no filtra por query, hacemos filtro local)
         const t = await client.get(`/tasks/`, { params: { room: roomId } });
         const raw = Array.isArray(t.data) ? t.data : t.data.results || [];
         const onlyThisRoom: Task[] = raw.filter((x: Task) => x.room === roomId);
@@ -74,17 +59,13 @@ export default function RoomDetailScreen({ route }: any) {
 
     useEffect(() => { fetchAll(); }, [fetchAll]);
 
-    /**
-     * Crear tarea rápida
-     * POST /api/housekeeping/tasks/
-     */
     const createQuickTask = useCallback(async () => {
         try {
         if (!title.trim()) {
             Alert.alert("Falta título", "Escribe un título para la tarea.");
             return;
         }
-        const client = await makeClient();
+        const client = await getClient();
         const payload = {
             title,
             description: "",
@@ -104,14 +85,10 @@ export default function RoomDetailScreen({ route }: any) {
         }
     }, [roomId, title]);
 
-    /**
-     * Alternar estado (DONE <-> PENDING)
-     * PATCH /api/housekeeping/tasks/{id}/
-     */
     const toggleTaskStatus = useCallback(async (task: Task) => {
         try {
         const next = task.status === "DONE" ? "PENDING" : "DONE";
-        const client = await makeClient();
+        const client = await getClient();
         const res = await client.patch(`/tasks/${task.id}/`, { status: next });
         const updated: Task = res.data;
 
@@ -122,13 +99,9 @@ export default function RoomDetailScreen({ route }: any) {
         }
     }, []);
 
-    /**
-     * Eliminar tarea (opcional)
-     * DELETE /api/housekeeping/tasks/{id}/
-     */
     const removeTask = useCallback(async (task: Task) => {
         try {
-        const client = await makeClient();
+        const client = await getClient();
         await client.delete(`/tasks/${task.id}/`);
         setTasks((prev) => prev.filter((t) => t.id !== task.id));
         } catch (e: any) {
@@ -140,20 +113,9 @@ export default function RoomDetailScreen({ route }: any) {
     const renderTask = ({ item }: { item: Task }) => {
         const isDone = item.status === "DONE";
         return (
-        <View
-            style={{
-            padding: 12,
-            borderWidth: 1,
-            borderColor: "#e5e7eb",
-            borderRadius: 12,
-            marginBottom: 8,
-            backgroundColor: "white",
-            }}
-        >
+        <View style={{ padding: 12, borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, marginBottom: 8, backgroundColor: "white" }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-            <Text style={{ fontWeight: "700", opacity: isDone ? 0.5 : 1 }}>
-                {item.title}
-            </Text>
+            <Text style={{ fontWeight: "700", opacity: isDone ? 0.5 : 1 }}>{item.title}</Text>
             <Text style={{ color: "#6b7280" }}>{item.priority}</Text>
             </View>
             <Text style={{ color: "#374151", marginBottom: 8 }}>
@@ -163,12 +125,7 @@ export default function RoomDetailScreen({ route }: any) {
             <View style={{ flexDirection: "row", gap: 10 }}>
             <TouchableOpacity
                 onPress={() => toggleTaskStatus(item)}
-                style={{
-                backgroundColor: isDone ? "#f59e0b" : "#16a34a",
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 8,
-                }}
+                style={{ backgroundColor: isDone ? "#f59e0b" : "#16a34a", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}
             >
                 <Text style={{ color: "white", fontWeight: "700" }}>
                 {isDone ? "Marcar pendiente" : "Marcar DONE"}
@@ -177,12 +134,7 @@ export default function RoomDetailScreen({ route }: any) {
 
             <TouchableOpacity
                 onPress={() => removeTask(item)}
-                style={{
-                backgroundColor: "#ef4444",
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 8,
-                }}
+                style={{ backgroundColor: "#ef4444", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}
             >
                 <Text style={{ color: "white", fontWeight: "700" }}>Eliminar</Text>
             </TouchableOpacity>
@@ -224,23 +176,13 @@ export default function RoomDetailScreen({ route }: any) {
         <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
             <TouchableOpacity
             onPress={() => setCreating(true)}
-            style={{
-                backgroundColor: "#2563eb",
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                borderRadius: 10,
-            }}
+            style={{ backgroundColor: "#2563eb", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10 }}
             >
             <Text style={{ color: "white", fontWeight: "600" }}>+ Tarea rápida</Text>
             </TouchableOpacity>
             <TouchableOpacity
             onPress={fetchAll}
-            style={{
-                backgroundColor: "#e5e7eb",
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                borderRadius: 10,
-            }}
+            style={{ backgroundColor: "#e5e7eb", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10 }}
             >
             <Text style={{ color: "#111827", fontWeight: "600" }}>Actualizar</Text>
             </TouchableOpacity>
@@ -263,12 +205,7 @@ export default function RoomDetailScreen({ route }: any) {
         />
 
         {/* Modal crear tarea */}
-        <Modal
-            visible={creating}
-            animationType="slide"
-            transparent
-            onRequestClose={() => setCreating(false)}
-        >
+        <Modal visible={creating} animationType="slide" transparent onRequestClose={() => setCreating(false)}>
             <View style={{ flex: 1, backgroundColor: "#0006", justifyContent: "center", padding: 20 }}>
             <View style={{ backgroundColor: "white", borderRadius: 12, padding: 16, gap: 10 }}>
                 <Text style={{ fontSize: 16, fontWeight: "700" }}>Nueva tarea rápida</Text>
@@ -276,13 +213,7 @@ export default function RoomDetailScreen({ route }: any) {
                 placeholder="Título de la tarea"
                 value={title}
                 onChangeText={setTitle}
-                style={{
-                    borderWidth: 1,
-                    borderColor: "#e5e7eb",
-                    borderRadius: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
-                }}
+                style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
                 />
                 <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>
                 <TouchableOpacity onPress={() => setCreating(false)}>
@@ -290,12 +221,7 @@ export default function RoomDetailScreen({ route }: any) {
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={createQuickTask}
-                    style={{
-                    backgroundColor: "#2563eb",
-                    paddingHorizontal: 12,
-                    paddingVertical: 8,
-                    borderRadius: 8,
-                    }}
+                    style={{ backgroundColor: "#2563eb", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}
                 >
                     <Text style={{ color: "white", fontWeight: "700" }}>Crear</Text>
                 </TouchableOpacity>

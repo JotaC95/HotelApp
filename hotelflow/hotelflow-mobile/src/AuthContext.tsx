@@ -1,15 +1,85 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { saveCreds, loadCreds, clearCreds, Credentials } from "./api";
+// src/AuthContext.tsx
+import React, {
+    createContext,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+    ReactNode,
+} from "react";
+import { Alert } from "react-native";
+import {
+    getClient,
+    loadCreds,
+    login as apiLogin,
+    logout as apiLogout,
+    setAuthHeaderFromCreds,
+} from "./api";
 
-type AuthCtx = { creds: Credentials | null; signIn: (c: Credentials)=>Promise<void>; signOut: ()=>Promise<void>; ready: boolean; };
-const Ctx = createContext<AuthCtx>({} as any);
-export const useAuth = () => useContext(Ctx);
+type AuthContextType = {
+    isAuthenticated: boolean;
+    signIn: (username: string, password: string) => Promise<void>;
+    signOut: () => Promise<void>;
+};
 
-export const AuthProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-    const [creds, setCreds] = useState<Credentials | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [ready, setReady] = useState(false);
-    useEffect(() => { (async () => { setCreds(await loadCreds()); setReady(true); })(); }, []);
-    const signIn = async (c: Credentials) => { await saveCreds(c); setCreds(c); };
-    const signOut = async () => { await clearCreds(); setCreds(null); };
-    return <Ctx.Provider value={{ creds, signIn, signOut, ready }}>{children}</Ctx.Provider>;
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    // Rehidratación al montar
+    useEffect(() => {
+        (async () => {
+        try {
+            const creds = await loadCreds();
+            if (creds) {
+            await setAuthHeaderFromCreds(creds.username, creds.password);
+            const c = await getClient();
+            // “Ping” simple al backend protegido
+            await c.get("/rooms/");
+            setIsAuthenticated(true);
+            }
+        } catch {
+            setIsAuthenticated(false);
+        } finally {
+            setReady(true);
+        }
+        })();
+    }, []);
+
+    const signIn = async (username: string, password: string) => {
+        try {
+        await apiLogin(username, password); // valida y persiste
+        setIsAuthenticated(true);
+        } catch (e: any) {
+        setIsAuthenticated(false);
+        const msg =
+            e?.response?.status === 401
+            ? "Usuario o contraseña inválidos"
+            : "No se pudo iniciar sesión";
+        Alert.alert("Login", msg);
+        throw e;
+        }
+    };
+
+    const signOut = async () => {
+        await apiLogout();
+        setIsAuthenticated(false);
+    };
+
+    const value = useMemo(
+        () => ({ isAuthenticated, signIn, signOut }),
+        [isAuthenticated]
+    );
+
+    if (!ready) return null; // Splash simple. Opcional: mostrar loader
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+    const ctx = useContext(AuthContext);
+    if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+    return ctx;
 };

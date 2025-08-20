@@ -1,49 +1,58 @@
-import React from "react";
-import { View, Text, TextInput, Button, Alert } from "react-native";
-import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+// src/screens/LoginScreen.tsx
+import React, { useState } from "react";
+import { View, TextInput, Button, Text, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { useAuth } from "../AuthContext";
-import { makeClient } from "../api";
 
-
-const schema = z.object({ username: z.string().min(1), password: z.string().min(1) });
-type Form = z.infer<typeof schema>;
-
-export default function LoginScreen({ navigation }: any) {
+export default function LoginScreen() {
     const { signIn } = useAuth();
-    const { control, handleSubmit } = useForm<Form>({ resolver: zodResolver(schema) });
+    const [username, setU] = useState("");
+    const [password, setP] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    const onSubmit = async (data: Form) => {
+    const handleLogin = async () => {
+        if (!username.trim() || !password.trim()) return;
         try {
-        await signIn({ username: data.username, password: data.password });
-        const client = await makeClient();
-        await client.get("/rooms/"); // valida credenciales
-        navigation.replace("Rooms");
-        } catch {
-        Alert.alert("Error", "Credenciales inválidas o servidor no disponible.");
+        setLoading(true);
+        await signIn(username.trim(), password);
+        // La navegación cambia automáticamente porque isAuthenticated pasa a true
+        } finally {
+        setLoading(false);
         }
     };
 
-    const Field = ({name, placeholder, secure=false}: any) => (
-        <Controller name={name} control={control} render={({ field:{onChange, value} })=>(
-        <TextInput
-            placeholder={placeholder}
-            autoCapitalize="none"
-            secureTextEntry={secure}
-            value={value}
-            onChangeText={onChange}
-            style={{ borderWidth:1, padding:12, borderRadius:8 }}
-        />
-        )}/>
-    );
-
     return (
-        <View style={{ flex:1, padding:24, gap:12, justifyContent:"center" }}>
-        <Text style={{ fontSize:20, fontWeight:"600" }}>HotelFlow — Iniciar sesión</Text>
-        <Field name="username" placeholder="Usuario" />
-        <Field name="password" placeholder="Contraseña" secure />
-        <Button title="Entrar" onPress={handleSubmit(onSubmit)} />
+        <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.select({ ios: "padding", android: undefined })}
+        >
+        <View style={{ flex: 1, justifyContent: "center", padding: 20, gap: 12 }}>
+            <Text style={{ fontSize: 22, fontWeight: "800", marginBottom: 12 }}>HotelFlow</Text>
+
+            <TextInput
+            placeholder="Usuario"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={username}
+            onChangeText={setU}
+            style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+            />
+
+            <TextInput
+            placeholder="Contraseña"
+            secureTextEntry
+            value={password}
+            onChangeText={setP}
+            style={{ borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}
+            />
+
+            <View style={{ marginTop: 8 }}>
+            {loading ? (
+                <ActivityIndicator />
+            ) : (
+                <Button title="Entrar" onPress={handleLogin} />
+            )}
+            </View>
         </View>
+        </KeyboardAvoidingView>
     );
 }

@@ -1,0 +1,21 @@
+# requirements.txt
+
+# --- Core ---
+Django>=4.2,<5.0
+djangorestframework>=3.14
+djangorestframework-simplejwt>=5.3  # opcional si quieres JWT
+
+# --- Utilidades ---
+django-cors-headers>=4.2   # CORS para conectar con el frontend móvil
+python-decouple>=3.8       # manejar .env de forma limpia
+
+# --- Base de datos ---
+psycopg2-binary>=2.9       # si usas PostgreSQL
+# mysqlclient>=2.2         # si usas MySQL/MariaDB (opcional)
+# sqlite ya viene con Python
+
+# --- Herramientas de desarrollo ---
+black>=24.4                # formateo de código
+isort>=5.12                # ordenar imports
+
+django-filter>=24.2
