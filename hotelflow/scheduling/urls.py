@@ -1,22 +1,25 @@
 # scheduling/urls.py
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import (
+from scheduling.views import (
     ZoneViewSet, SkillViewSet, StaffProfileViewSet, AvailabilityRuleViewSet, LeaveViewSet,
-    TaskTimeEstimateViewSet, RosterViewSet, TeamViewSet, ShiftViewSet, ShiftAssignmentViewSet,
-    TaskAssignmentViewSet
+    TaskTimeEstimateViewSet, RosterViewSet, TeamViewSet, ShiftViewSet,
+    ShiftAssignmentViewSet, TaskAssignmentViewSet
 )
 
 router = DefaultRouter()
-router.register(r"zones", ZoneViewSet)
-router.register(r"skills", SkillViewSet)
-router.register(r"staff-profiles", StaffProfileViewSet)
-router.register(r"availability-rules", AvailabilityRuleViewSet)
-router.register(r"leaves", LeaveViewSet)
-router.register(r"task-time-estimates", TaskTimeEstimateViewSet)
-router.register(r"rosters", RosterViewSet)
-router.register(r"teams", TeamViewSet)
-router.register(r"shifts", ShiftViewSet)
-router.register(r"shift-assignments", ShiftAssignmentViewSet)
-router.register(r"task-assignments", TaskAssignmentViewSet)
+router.register(r"zones", ZoneViewSet, basename="sched-zone")
+router.register(r"skills", SkillViewSet, basename="sched-skill")
+router.register(r"staff-profiles", StaffProfileViewSet, basename="sched-staffprofile")
+router.register(r"availability", AvailabilityRuleViewSet, basename="sched-availability")
+router.register(r"leaves", LeaveViewSet, basename="sched-leave")
+router.register(r"estimates", TaskTimeEstimateViewSet, basename="sched-estimate")
+router.register(r"rosters", RosterViewSet, basename="sched-roster")
+router.register(r"teams", TeamViewSet, basename="sched-team")
+router.register(r"shifts", ShiftViewSet, basename="sched-shift")
+router.register(r"shift-assignments", ShiftAssignmentViewSet, basename="sched-shiftassign")
+router.register(r"task-assignments", TaskAssignmentViewSet, basename="sched-taskassign")
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("", include(router.urls)),   # sin admin
+]

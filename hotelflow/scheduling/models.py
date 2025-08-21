@@ -1,11 +1,8 @@
-from django.db import models
-
-# Create your models here.
 # scheduling/models.py
 from django.db import models
 from django.conf import settings
 
-# Importa Room desde tu app actual
+# Importa Room y HousekeepingTask desde tu app housekeeping
 from housekeeping.models import Room, HousekeepingTask
 
 User = settings.AUTH_USER_MODEL
@@ -51,7 +48,13 @@ class StaffProfile(models.Model):
 
 class AvailabilityRule(models.Model):
     class Weekday(models.IntegerChoices):
-        MON=0, "Mon"; TUE=1, "Tue"; WED=2, "Wed"; THU=3, "Thu"; FRI=4, "Fri"; SAT=5, "Sat"; SUN=6, "Sun"
+        MON = 0, "Mon"
+        TUE = 1, "Tue"
+        WED = 2, "Wed"
+        THU = 3, "Thu"
+        FRI = 4, "Fri"
+        SAT = 5, "Sat"
+        SUN = 6, "Sun"
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="availability_rules")
     weekday = models.IntegerField(choices=Weekday.choices)
@@ -154,6 +157,9 @@ class ShiftAssignment(models.Model):
     class Meta:
         unique_together = ("shift", "user")
 
+    def __str__(self):
+        return f"{self.user} @ {self.shift} ({self.role})"
+
 
 class TaskAssignment(models.Model):
     task = models.ForeignKey(HousekeepingTask, on_delete=models.CASCADE, related_name="roster_assignments")
@@ -166,3 +172,7 @@ class TaskAssignment(models.Model):
 
     class Meta:
         unique_together = ("task", "shift")
+
+    def __str__(self):
+        who = self.assignee or self.team or "Unassigned"
+        return f"{who} -> Task {self.task_id} on {self.shift}"

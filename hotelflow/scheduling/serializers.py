@@ -1,63 +1,68 @@
 # scheduling/serializers.py
 from rest_framework import serializers
 from .models import (
-    Zone, Skill, StaffProfile, AvailabilityRule, Leave, TaskTimeEstimate,
-    Roster, Team, Shift, ShiftAssignment, TaskAssignment
+    Zone, Skill, StaffProfile, AvailabilityRule, Leave,
+    TaskTimeEstimate, Roster, Team, Shift, ShiftAssignment, TaskAssignment
 )
 
 class ZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Zone
-        fields = "__all__"
+        fields = ["id", "name"]
 
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
         model = Skill
-        fields = "__all__"
+        fields = ["id", "name"]
 
 class StaffProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = StaffProfile
-        fields = "__all__"
+        fields = [
+            "id", "user", "employment_type", "is_on_vacation",
+            "max_hours_per_week", "preferred_zones", "skills"
+        ]
 
 class AvailabilityRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = AvailabilityRule
-        fields = "__all__"
+        fields = ["id", "user", "weekday", "start", "end", "preferred_shift", "is_unavailable"]
 
 class LeaveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Leave
-        fields = "__all__"
+        fields = ["id", "user", "start", "end", "reason"]
 
 class TaskTimeEstimateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskTimeEstimate
-        fields = "__all__"
-
-class RosterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Roster
-        fields = "__all__"
+        fields = ["id", "room_category", "clean_type", "minutes"]
 
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
-        fields = "__all__"
+        fields = ["id", "name", "members", "compatibility_score"]
+
+class ShiftSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shift
+        fields = ["id", "roster", "date", "start", "end", "zone", "team", "planned_minutes"]
+
+class RosterSerializer(serializers.ModelSerializer):
+    shifts = ShiftSerializer(many=True, read_only=True)
+    class Meta:
+        model = Roster
+        fields = ["id", "week_start", "generated_at", "is_published", "version", "shifts"]
 
 class ShiftAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShiftAssignment
-        fields = "__all__"
-
-class ShiftSerializer(serializers.ModelSerializer):
-    assignments = ShiftAssignmentSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Shift
-        fields = ["id","roster","date","start","end","zone","team","planned_minutes","assignments"]
+        fields = ["id", "shift", "user", "role"]
 
 class TaskAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskAssignment
-        fields = "__all__"
+        fields = [
+            "id", "task", "shift", "assignee", "team",
+            "planned_start", "planned_end", "planned_minutes"
+        ]
