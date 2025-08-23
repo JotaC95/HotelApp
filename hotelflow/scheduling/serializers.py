@@ -46,13 +46,12 @@ class TeamSerializer(serializers.ModelSerializer):
 class ShiftSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shift
-        fields = ["id", "roster", "date", "start", "end", "zone", "team", "planned_minutes"]
+        fields = "__all__"
 
 class RosterSerializer(serializers.ModelSerializer):
-    shifts = ShiftSerializer(many=True, read_only=True)
     class Meta:
         model = Roster
-        fields = ["id", "week_start", "generated_at", "is_published", "version", "shifts"]
+        fields = "__all__"
 
 class ShiftAssignmentSerializer(serializers.ModelSerializer):
     class Meta:

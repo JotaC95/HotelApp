@@ -49,7 +49,16 @@ export default function LoginScreen() {
             {loading ? (
                 <ActivityIndicator />
             ) : (
-                <Button title="Entrar" onPress={handleLogin} />
+                <Button
+                    title="Entrar"
+                    onPress={async () => {
+                        try {
+                        await signIn(username, password);  // <- ahora sí esperamos al login
+                        } catch {
+                        // el AuthContext ya lanza Alert, no necesitas nada más aquí
+                        }
+                    }}
+                />
             )}
             </View>
         </View>

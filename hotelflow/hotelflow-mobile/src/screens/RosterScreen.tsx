@@ -12,6 +12,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation";
 import { getClient } from "../api";
 
+
 type Props = NativeStackScreenProps<RootStackParamList, "Roster">;
 
 type Zone = { id: number; name: string };
@@ -141,4 +142,17 @@ export default function RosterScreen({}: Props) {
         />
         </View>
     );
+}
+
+async function generateRoster(rosterId: number) {
+    try {
+        const c = await getClient();
+        await c.post(`/scheduling/rosters/${rosterId}/generate-ai/`, {
+        policy: { start_window: "07:00", end_window: "10:00", default_shift_hours: 8, team_size: 2 }
+        });
+        Alert.alert("OK", "Roster generado");
+        // luego refresca tu lista de shifts
+    } catch (e: any) {
+        Alert.alert("Error", e?.response?.data?.detail ?? e?.message ?? "No se pudo generar");
+    }
 }

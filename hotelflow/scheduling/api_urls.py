@@ -1,9 +1,11 @@
-# scheduling/api_urls.py
+# scheduling/api_urls.py (o donde tengas tu router de scheduling)
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    ZoneViewSet, SkillViewSet, StaffProfileViewSet, AvailabilityRuleViewSet, LeaveViewSet,
-    TaskTimeEstimateViewSet, RosterViewSet, TeamViewSet, ShiftViewSet,
-    ShiftAssignmentViewSet, TaskAssignmentViewSet
+    ZoneViewSet, SkillViewSet, StaffProfileViewSet, AvailabilityRuleViewSet,
+    LeaveViewSet, TaskTimeEstimateViewSet, RosterViewSet, TeamViewSet, ShiftViewSet,
+    ShiftAssignmentViewSet, TaskAssignmentViewSet,
+    MyWeekView, MyAvailabilityView,
 )
 
 router = DefaultRouter()
@@ -19,4 +21,12 @@ router.register(r"scheduling/shifts", ShiftViewSet, basename="sched-shift")
 router.register(r"scheduling/shift-assignments", ShiftAssignmentViewSet, basename="sched-shiftassign")
 router.register(r"scheduling/task-assignments", TaskAssignmentViewSet, basename="sched-taskassign")
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("", include(router.urls)),
+
+    # Endpoints "custom":
+    path("scheduling/my_week", MyWeekView.as_view()),
+    path("scheduling/my_week/", MyWeekView.as_view()),
+    path("scheduling/my_availability", MyAvailabilityView.as_view()),
+    path("scheduling/my_availability/", MyAvailabilityView.as_view()),
+]
