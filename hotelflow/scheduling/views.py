@@ -17,6 +17,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from datetime import date as dt_date, time as dt_time, datetime, timedelta
+from rest_framework.permissions import IsAuthenticated
+from django.utils.timezone import localdate
 
 # OpenAI (SDK v1.x)
 try:
@@ -25,30 +27,13 @@ except Exception:
     OpenAI = None  # para poder arrancar sin el paquete instalado
 
 from .models import (
-    Zone,
-    Skill,
-    StaffProfile,
-    AvailabilityRule,
-    Leave,
-    TaskTimeEstimate,
-    Roster,
-    Team,
-    Shift,
-    ShiftAssignment,
-    TaskAssignment,
+    Zone, Skill, StaffProfile, AvailabilityRule, Leave, TaskTimeEstimate, Roster,
+    Team, Shift, ShiftAssignment, TaskAssignment,
 )
 from .serializers import (
-    ZoneSerializer,
-    SkillSerializer,
-    StaffProfileSerializer,
-    AvailabilityRuleSerializer,
-    LeaveSerializer,
-    TaskTimeEstimateSerializer,
-    RosterSerializer,
-    TeamSerializer,
-    ShiftSerializer,
-    ShiftAssignmentSerializer,
-    TaskAssignmentSerializer,
+    ZoneSerializer, SkillSerializer, StaffProfileSerializer, AvailabilityRuleSerializer,
+    LeaveSerializer, TaskTimeEstimateSerializer, RosterSerializer, TeamSerializer,
+    ShiftSerializer, ShiftAssignmentSerializer, TaskAssignmentSerializer,
 )
 
 # Si necesitas HousekeepingTask/Room para estimar carga:
@@ -789,3 +774,54 @@ class RosterViewSet(viewsets.ModelViewSet):
                 "shifts": ShiftSerializer(created_shifts, many=True).data,
             }
             return Response(out, status=status.HTTP_201_CREATED)
+        
+class SupervisorSummaryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        today = localdate()
+
+        # Rooms por estado (si tu app de housekeeping usa Room y status)
+        rooms_summary = {"DIRTY": 0, "CLEANING": 0, "INSPECTION": 0, "CLEAN": 0, "OOO": 0}
+        try:
+            from housekeeping.models import Room
+            qs = Room.objects.values_list("status")
+            for (st,) in qs:
+                if st in rooms_summary:
+                    rooms_summary[st] += 1
+                else:
+                    rooms_summary[st] = rooms_summary.get(st, 0) + 1
+        except Exception:
+            # si Room no existe, devolvemos vacío
+            rooms_summary = {}
+
+        # Shifts de hoy
+        shifts_today = Shift.objects.filter(date=today).count()
+        unassigned_shifts = Shift.objects.filter(date=today).exclude(assignments__isnull=False).count()
+
+        # Tareas de limpieza sin asignar (si las manejas en housekeeping)
+        unassigned_tasks = 0
+        try:
+            from housekeeping.models import HousekeepingTask
+            # Sin TaskAssignment asociado
+            unassigned_tasks = HousekeepingTask.objects.filter(taskassignment__isnull=True).count()
+        except Exception:
+            pass
+
+        # Incidentes pendientes (si existe IncidentReport con estado)
+        open_incidents = 0
+        try:
+            from housekeeping.models import IncidentReport
+            # ajusta el campo/valor según tu modelo
+            open_incidents = IncidentReport.objects.filter(status__in=["OPEN", "NEW", "PENDING"]).count()
+        except Exception:
+            pass
+
+        return Response({
+            "date": today.isoformat(),
+            "rooms_summary": rooms_summary,
+            "shifts_today": shifts_today,
+            "unassigned_shifts": unassigned_shifts,
+            "unassigned_tasks": unassigned_tasks,
+            "open_incidents": open_incidents,
+        })

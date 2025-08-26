@@ -1,3 +1,4 @@
+// src/navigation/index.tsx
 import React from "react";
 import { Image, Pressable, Text, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
@@ -10,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../AuthContext";
 import type { UserRole } from "../types/roles";
 
+// Screens
 import LoginScreen from "../screens/LoginScreen";
 import RoomsScreen from "../screens/RoomsScreen";
 import RoomDetailScreen from "../screens/RoomDetailScreen";
@@ -19,11 +21,15 @@ import MyAvailabilityScreen from "../screens/MyAvailabilityScreen";
 import RosterGenerateScreen from "../screens/RosterGenerateScreen";
 import MaintenanceScreen from "../screens/MaintenanceScreen";
 import FrontdeskScreen from "../screens/FrontdeskScreen";
+import SupervisorHomeScreen from "../screens/SupervisorHomeScreen";
+import IncidentsScreen from "../screens/IncidentsScreen";
 
-import UserBadge from "../components/UserBadge";
-// ✅ Asegúrate de que exista este archivo en /assets y el path sea correcto:
 import Logo from "../../assets/logo.png";
+import UserBadge from "../components/UserBadge";
 
+// ------------------------
+// Tipos de rutas (AÑADIMOS SupervisorHome e Incidents)
+// ------------------------
 export type RootStackParamList = {
   Login: undefined;
 
@@ -36,6 +42,8 @@ export type RootStackParamList = {
   // Supervisor
   Roster: undefined;
   RosterGenerate: undefined;
+  SupervisorHome: undefined;   // <-- NUEVO
+  Incidents: undefined;        // <-- NUEVO
 
   // Maintenance
   Maintenance: undefined;
@@ -48,18 +56,13 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator();
 
 // ------------------------
-// Header personalizado (2 filas)
+// Header personalizado
 // ------------------------
 function AppHeader({ navigation, back, options }: NativeStackHeaderProps) {
   const insets = useSafeAreaInsets();
+
   const canGoBack = !!back;
-
-  // altura (fila principal) suficientemente alta para un logo grande
-  const headerHeight = 76;
-
-  // Ejecutamos headerRight si fue provisto por la pantalla
-  const headerRightNode =
-    (options as any)?.headerRight?.({ tintColor: undefined }) ?? null;
+  const headerHeight = 72;
 
   return (
     <View
@@ -70,64 +73,49 @@ function AppHeader({ navigation, back, options }: NativeStackHeaderProps) {
         borderBottomColor: "#e5e7eb",
       }}
     >
-      {/* --- Fila principal: back | logo | salir --- */}
       <View
         style={{
           height: headerHeight,
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          paddingHorizontal: 16,
+          paddingHorizontal: 12,
         }}
       >
-        <View style={{ width: 100 }}>
+        {/* Izquierda */}
+        <View style={{ width: 90 }}>
           {canGoBack ? (
             <Pressable
               onPress={() => navigation.goBack()}
               style={{
                 paddingVertical: 8,
-                paddingHorizontal: 12,
+                paddingHorizontal: 10,
                 borderRadius: 10,
                 backgroundColor: "#eef2ff",
                 alignSelf: "flex-start",
               }}
             >
-              <Text style={{ color: "#1d4ed8", fontWeight: "700" }}>Atrás</Text>
+              <Text style={{ color: "#1d4ed8", fontWeight: "600" }}>Atrás</Text>
             </Pressable>
           ) : null}
         </View>
 
-        <View style={{ alignItems: "center", flex: 1 }}>
-          <Image
-            source={Logo}
-            resizeMode="contain"
-            style={{ width: 200, height: 56 }}
-          />
+        {/* Centro: logo + badge */}
+        <View style={{ alignItems: "center", flex: 1, gap: 6 }}>
+          <Image source={Logo} resizeMode="contain" style={{ width: 140, height: 42 }} />
+          <UserBadge />
         </View>
 
-        <View style={{ width: 100, alignItems: "flex-end" }}>
-          {headerRightNode}
+        {/* Derecha: botón que defina cada screen en headerRight */}
+        <View style={{ width: 90, alignItems: "flex-end" }}>
+          {options.headerRight ? <View>{options.headerRight({ canGoBack })}</View> : null}
         </View>
-      </View>
-
-      {/* --- Fila secundaria: badge de usuario (nombre + rol) --- */}
-      <View
-        style={{
-          backgroundColor: "#f9fafb",
-          borderTopWidth: 0.5,
-          borderTopColor: "#e5e7eb",
-          paddingVertical: 6,
-          paddingHorizontal: 16,
-          alignItems: "flex-start",
-        }}
-      >
-        <UserBadge />
       </View>
     </View>
   );
 }
 
-// Botón Salir para pantallas raíz
+// Helper: botón Salir
 const HeaderSignOut = () => {
   const { signOut } = useAuth();
   return (
@@ -135,12 +123,12 @@ const HeaderSignOut = () => {
       onPress={signOut}
       style={{
         paddingVertical: 8,
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
         borderRadius: 10,
         backgroundColor: "#e5e7eb",
       }}
     >
-      <Text style={{ color: "#111827", fontWeight: "700" }}>Salir</Text>
+      <Text style={{ color: "#111827", fontWeight: "600" }}>Salir</Text>
     </Pressable>
   );
 };
@@ -201,6 +189,25 @@ function CleanerTabs() {
 function SupervisorTabs() {
   return (
     <Tabs.Navigator screenOptions={{ headerShown: false }}>
+      <Tabs.Screen name="SupervisorHomeTab" options={{ title: "Inicio" }}>
+        {() => (
+          <Stack.Navigator
+            screenOptions={{
+              header: (props) => <AppHeader {...props} />,
+              headerRight: () => <HeaderSignOut />,
+            }}
+          >
+            {/* Nombres deben existir en RootStackParamList */}
+            <Stack.Screen name="SupervisorHome" component={SupervisorHomeScreen} />
+            <Stack.Screen
+              name="RosterGenerate"
+              component={RosterGenerateScreen}
+              options={{ headerRight: undefined }}
+            />
+          </Stack.Navigator>
+        )}
+      </Tabs.Screen>
+
       <Tabs.Screen name="RosterTab" options={{ title: "Roster" }}>
         {() => (
           <Stack.Navigator
@@ -210,11 +217,6 @@ function SupervisorTabs() {
             }}
           >
             <Stack.Screen name="Roster" component={RosterScreen} />
-            <Stack.Screen
-              name="RosterGenerate"
-              component={RosterGenerateScreen}
-              options={{ headerRight: undefined }}
-            />
           </Stack.Navigator>
         )}
       </Tabs.Screen>
@@ -236,6 +238,19 @@ function SupervisorTabs() {
           </Stack.Navigator>
         )}
       </Tabs.Screen>
+
+      <Tabs.Screen name="IncidentsTab" options={{ title: "Incidentes" }}>
+        {() => (
+          <Stack.Navigator
+            screenOptions={{
+              header: (props) => <AppHeader {...props} />,
+              headerRight: () => <HeaderSignOut />,
+            }}
+          >
+            <Stack.Screen name="Incidents" component={IncidentsScreen} />
+          </Stack.Navigator>
+        )}
+      </Tabs.Screen>
     </Tabs.Navigator>
   );
 }
@@ -245,8 +260,8 @@ function MaintenanceTabs() {
     <Tabs.Navigator screenOptions={{ headerShown: false }}>
       <Tabs.Screen
         name="MaintenanceTab"
-        component={MaintenanceScreen}
         options={{ title: "Mantenimiento" }}
+        component={MaintenanceScreen}
       />
     </Tabs.Navigator>
   );
@@ -257,8 +272,8 @@ function FrontdeskTabs() {
     <Tabs.Navigator screenOptions={{ headerShown: false }}>
       <Tabs.Screen
         name="FrontdeskTab"
-        component={FrontdeskScreen}
         options={{ title: "Recepción" }}
+        component={FrontdeskScreen}
       />
     </Tabs.Navigator>
   );
@@ -276,7 +291,6 @@ function AppByRole({ role }: { role: UserRole }) {
 // ------------------------
 export default function AppNavigator() {
   const { ready, isAuthenticated, role } = useAuth();
-
   if (!ready) return null;
 
   return (
