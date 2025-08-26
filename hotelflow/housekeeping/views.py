@@ -37,6 +37,7 @@ User = get_user_model()
 
 from .models import ChatRoom, ChatMessage
 from .serializers import ChatRoomSerializer, ChatMessageSerializer
+from .permissions import IsHKStaffOrHasModelView
 
 
 class IsStaffOrReadOnly(permissions.BasePermission):
@@ -47,13 +48,9 @@ class IsStaffOrReadOnly(permissions.BasePermission):
 
 
 class RoomViewSet(viewsets.ModelViewSet):
-    queryset = Room.objects.all().order_by("floor", "number")
+    queryset = Room.objects.all().order_by("number")
     serializer_class = RoomSerializer
-    permission_classes = [IsStaffOrReadOnly]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ["status", "floor", "zone"]
-    search_fields = ["number", "zone", "notes"]
-    ordering_fields = ["floor", "number", "status"]
+    permission_classes = [IsHKStaffOrHasModelView]
 
 
 class HousekeepingTaskViewSet(viewsets.ModelViewSet):

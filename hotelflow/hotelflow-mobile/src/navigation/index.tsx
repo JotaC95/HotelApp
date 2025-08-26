@@ -1,13 +1,15 @@
 import React from "react";
-import { Image, Text, View } from "react-native";
-import { NavigationContainer, DefaultTheme, Theme } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Image, Pressable, Text, View } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import {
+  createNativeStackNavigator,
+  NativeStackHeaderProps,
+} from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../AuthContext";
 import type { UserRole } from "../types/roles";
-import { Ionicons } from "@expo/vector-icons";
 
-// Pantallas
 import LoginScreen from "../screens/LoginScreen";
 import RoomsScreen from "../screens/RoomsScreen";
 import RoomDetailScreen from "../screens/RoomDetailScreen";
@@ -18,31 +20,9 @@ import RosterGenerateScreen from "../screens/RosterGenerateScreen";
 import MaintenanceScreen from "../screens/MaintenanceScreen";
 import FrontdeskScreen from "../screens/FrontdeskScreen";
 
-// Logo
-const LOGO = require("../../assets/logo.jpg");
-
-// Colores base (puedes mover a un theme central si quieres)
-const brand = {
-  primary: "#2563eb",
-  background: "#f8fafc",
-  card: "#ffffff",
-  text: "#111827",
-  border: "#e5e7eb",
-  muted: "#6b7280",
-};
-
-// Tema de navegación (colores suaves)
-const navTheme: Theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: brand.primary,
-    background: brand.background,
-    card: brand.card,
-    text: brand.text,
-    border: brand.border,
-  },
-};
+import UserBadge from "../components/UserBadge";
+// ✅ Asegúrate de que exista este archivo en /assets y el path sea correcto:
+import Logo from "../../assets/logo.png";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -67,45 +47,124 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator();
 
-function HeaderLogoTitle() {
+// ------------------------
+// Header personalizado (2 filas)
+// ------------------------
+function AppHeader({ navigation, back, options }: NativeStackHeaderProps) {
+  const insets = useSafeAreaInsets();
+  const canGoBack = !!back;
+
+  // altura (fila principal) suficientemente alta para un logo grande
+  const headerHeight = 76;
+
+  // Ejecutamos headerRight si fue provisto por la pantalla
+  const headerRightNode =
+    (options as any)?.headerRight?.({ tintColor: undefined }) ?? null;
+
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-      <Image source={LOGO} style={{ width: 26, height: 26, borderRadius: 6 }} resizeMode="contain" />
-      <Text style={{ fontWeight: "800", fontSize: 16, color: brand.text }}>HotelFlow</Text>
+    <View
+      style={{
+        paddingTop: insets.top,
+        backgroundColor: "#fff",
+        borderBottomWidth: 0.5,
+        borderBottomColor: "#e5e7eb",
+      }}
+    >
+      {/* --- Fila principal: back | logo | salir --- */}
+      <View
+        style={{
+          height: headerHeight,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
+        }}
+      >
+        <View style={{ width: 100 }}>
+          {canGoBack ? (
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={{
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderRadius: 10,
+                backgroundColor: "#eef2ff",
+                alignSelf: "flex-start",
+              }}
+            >
+              <Text style={{ color: "#1d4ed8", fontWeight: "700" }}>Atrás</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <Image
+            source={Logo}
+            resizeMode="contain"
+            style={{ width: 200, height: 56 }}
+          />
+        </View>
+
+        <View style={{ width: 100, alignItems: "flex-end" }}>
+          {headerRightNode}
+        </View>
+      </View>
+
+      {/* --- Fila secundaria: badge de usuario (nombre + rol) --- */}
+      <View
+        style={{
+          backgroundColor: "#f9fafb",
+          borderTopWidth: 0.5,
+          borderTopColor: "#e5e7eb",
+          paddingVertical: 6,
+          paddingHorizontal: 16,
+          alignItems: "flex-start",
+        }}
+      >
+        <UserBadge />
+      </View>
     </View>
   );
 }
 
+// Botón Salir para pantallas raíz
+const HeaderSignOut = () => {
+  const { signOut } = useAuth();
+  return (
+    <Pressable
+      onPress={signOut}
+      style={{
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        backgroundColor: "#e5e7eb",
+      }}
+    >
+      <Text style={{ color: "#111827", fontWeight: "700" }}>Salir</Text>
+    </Pressable>
+  );
+};
+
+// ------------------------
+// Tabs por rol
+// ------------------------
 function CleanerTabs() {
   return (
-    <Tabs.Navigator
-      screenOptions={({ route }) => ({
-        tabBarActiveTintColor: brand.primary,
-        tabBarInactiveTintColor: brand.muted,
-        tabBarStyle: { height: 60, paddingBottom: 10, paddingTop: 6 },
-        tabBarIcon: ({ color, size }) => {
-          const map: Record<string, keyof typeof Ionicons.glyphMap> = {
-            RoomsTab: "bed-outline",
-            MyWeekTab: "calendar-outline",
-            AvailabilityTab: "time-outline",
-          };
-          const name = map[route.name] ?? "ellipse-outline";
-          return <Ionicons name={name} size={size} color={color} />;
-        },
-        headerTitle: () => <HeaderLogoTitle />,
-        headerTitleAlign: "center",
-      })}
-    >
+    <Tabs.Navigator screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="RoomsTab" options={{ title: "Habitaciones" }}>
         {() => (
           <Stack.Navigator
             screenOptions={{
-              headerTitle: () => <HeaderLogoTitle />,
-              headerTitleAlign: "center",
+              header: (props) => <AppHeader {...props} />,
+              headerRight: () => <HeaderSignOut />,
             }}
           >
-            <Stack.Screen name="Rooms" component={RoomsScreen} options={{ title: "Habitaciones" }} />
-            <Stack.Screen name="RoomDetail" component={RoomDetailScreen} options={{ title: "Detalle habitación" }} />
+            <Stack.Screen name="Rooms" component={RoomsScreen} />
+            <Stack.Screen
+              name="RoomDetail"
+              component={RoomDetailScreen}
+              options={{ headerRight: undefined }}
+            />
           </Stack.Navigator>
         )}
       </Tabs.Screen>
@@ -114,11 +173,11 @@ function CleanerTabs() {
         {() => (
           <Stack.Navigator
             screenOptions={{
-              headerTitle: () => <HeaderLogoTitle />,
-              headerTitleAlign: "center",
+              header: (props) => <AppHeader {...props} />,
+              headerRight: () => <HeaderSignOut />,
             }}
           >
-            <Stack.Screen name="MyWeek" component={MyWeekScreen} options={{ title: "Mi semana" }} />
+            <Stack.Screen name="MyWeek" component={MyWeekScreen} />
           </Stack.Navigator>
         )}
       </Tabs.Screen>
@@ -127,11 +186,11 @@ function CleanerTabs() {
         {() => (
           <Stack.Navigator
             screenOptions={{
-              headerTitle: () => <HeaderLogoTitle />,
-              headerTitleAlign: "center",
+              header: (props) => <AppHeader {...props} />,
+              headerRight: () => <HeaderSignOut />,
             }}
           >
-            <Stack.Screen name="MyAvailability" component={MyAvailabilityScreen} options={{ title: "Mi disponibilidad" }} />
+            <Stack.Screen name="MyAvailability" component={MyAvailabilityScreen} />
           </Stack.Navigator>
         )}
       </Tabs.Screen>
@@ -141,33 +200,21 @@ function CleanerTabs() {
 
 function SupervisorTabs() {
   return (
-    <Tabs.Navigator
-      screenOptions={({ route }) => ({
-        tabBarActiveTintColor: brand.primary,
-        tabBarInactiveTintColor: brand.muted,
-        tabBarStyle: { height: 60, paddingBottom: 10, paddingTop: 6 },
-        tabBarIcon: ({ color, size }) => {
-          const map: Record<string, keyof typeof Ionicons.glyphMap> = {
-            RosterTab: "people-outline",
-            RoomsTab: "bed-outline",
-          };
-          const name = map[route.name] ?? "ellipse-outline";
-          return <Ionicons name={name} size={size} color={color} />;
-        },
-        headerTitle: () => <HeaderLogoTitle />,
-        headerTitleAlign: "center",
-      })}
-    >
+    <Tabs.Navigator screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="RosterTab" options={{ title: "Roster" }}>
         {() => (
           <Stack.Navigator
             screenOptions={{
-              headerTitle: () => <HeaderLogoTitle />,
-              headerTitleAlign: "center",
+              header: (props) => <AppHeader {...props} />,
+              headerRight: () => <HeaderSignOut />,
             }}
           >
-            <Stack.Screen name="Roster" component={RosterScreen} options={{ title: "Roster / Turnos" }} />
-            <Stack.Screen name="RosterGenerate" component={RosterGenerateScreen} options={{ title: "Generar roster (AI)" }} />
+            <Stack.Screen name="Roster" component={RosterScreen} />
+            <Stack.Screen
+              name="RosterGenerate"
+              component={RosterGenerateScreen}
+              options={{ headerRight: undefined }}
+            />
           </Stack.Navigator>
         )}
       </Tabs.Screen>
@@ -176,12 +223,16 @@ function SupervisorTabs() {
         {() => (
           <Stack.Navigator
             screenOptions={{
-              headerTitle: () => <HeaderLogoTitle />,
-              headerTitleAlign: "center",
+              header: (props) => <AppHeader {...props} />,
+              headerRight: () => <HeaderSignOut />,
             }}
           >
-            <Stack.Screen name="Rooms" component={RoomsScreen} options={{ title: "Habitaciones" }} />
-            <Stack.Screen name="RoomDetail" component={RoomDetailScreen} options={{ title: "Detalle habitación" }} />
+            <Stack.Screen name="Rooms" component={RoomsScreen} />
+            <Stack.Screen
+              name="RoomDetail"
+              component={RoomDetailScreen}
+              options={{ headerRight: undefined }}
+            />
           </Stack.Navigator>
         )}
       </Tabs.Screen>
@@ -191,22 +242,11 @@ function SupervisorTabs() {
 
 function MaintenanceTabs() {
   return (
-    <Tabs.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: brand.primary,
-        tabBarInactiveTintColor: brand.muted,
-        tabBarStyle: { height: 60, paddingBottom: 10, paddingTop: 6 },
-        headerTitle: () => <HeaderLogoTitle />,
-        headerTitleAlign: "center",
-      }}
-    >
+    <Tabs.Navigator screenOptions={{ headerShown: false }}>
       <Tabs.Screen
         name="MaintenanceTab"
-        options={{
-          title: "Mantenimiento",
-          tabBarIcon: ({ color, size }) => <Ionicons name="construct-outline" color={color} size={size} />,
-        }}
         component={MaintenanceScreen}
+        options={{ title: "Mantenimiento" }}
       />
     </Tabs.Navigator>
   );
@@ -214,22 +254,11 @@ function MaintenanceTabs() {
 
 function FrontdeskTabs() {
   return (
-    <Tabs.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: brand.primary,
-        tabBarInactiveTintColor: brand.muted,
-        tabBarStyle: { height: 60, paddingBottom: 10, paddingTop: 6 },
-        headerTitle: () => <HeaderLogoTitle />,
-        headerTitleAlign: "center",
-      }}
-    >
+    <Tabs.Navigator screenOptions={{ headerShown: false }}>
       <Tabs.Screen
         name="FrontdeskTab"
-        options={{
-          title: "Recepción",
-          tabBarIcon: ({ color, size }) => <Ionicons name="business-outline" color={color} size={size} />,
-        }}
         component={FrontdeskScreen}
+        options={{ title: "Recepción" }}
       />
     </Tabs.Navigator>
   );
@@ -239,23 +268,29 @@ function AppByRole({ role }: { role: UserRole }) {
   if (role === "SUPERVISOR") return <SupervisorTabs />;
   if (role === "MAINTENANCE") return <MaintenanceTabs />;
   if (role === "FRONTDESK") return <FrontdeskTabs />;
-  return <CleanerTabs />;
+  return <CleanerTabs />; // default CLEANER
 }
 
+// ------------------------
+// Root navigator
+// ------------------------
 export default function AppNavigator() {
-  const { isAuthenticated, role } = useAuth();
+  const { ready, isAuthenticated, role } = useAuth();
+
+  if (!ready) return null;
+
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer>
       {isAuthenticated && role ? (
         <AppByRole role={role} />
       ) : (
         <Stack.Navigator
           screenOptions={{
-            headerTitle: () => <HeaderLogoTitle />,
-            headerTitleAlign: "center",
+            header: (props) => <AppHeader {...props} />,
+            headerRight: undefined,
           }}
         >
-          <Stack.Screen name="Login" component={LoginScreen} options={{ title: "Iniciar sesión" }} />
+          <Stack.Screen name="Login" component={LoginScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>
