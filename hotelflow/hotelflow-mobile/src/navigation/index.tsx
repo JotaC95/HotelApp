@@ -50,6 +50,8 @@ export type RootStackParamList = {
 
   // Frontdesk
   Frontdesk: undefined;
+
+  TaskDetail: { taskId: number };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
