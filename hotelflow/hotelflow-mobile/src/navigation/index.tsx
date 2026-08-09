@@ -23,6 +23,8 @@ import MaintenanceScreen from "../screens/MaintenanceScreen";
 import FrontdeskScreen from "../screens/FrontdeskScreen";
 import SupervisorHomeScreen from "../screens/SupervisorHomeScreen";
 import IncidentsScreen from "../screens/IncidentsScreen";
+import TaskListScreen from "../screens/TaskListScreen";
+import TaskDetailScreen from "../screens/TaskDetailScreen";
 
 import Logo from "../../assets/logo.png";
 import UserBadge from "../components/UserBadge";
@@ -36,6 +38,7 @@ export type RootStackParamList = {
   // Cleaner
   Rooms: undefined;
   RoomDetail: { roomId: number };
+  TaskList: { roomId: number };
   MyWeek: { monday?: string } | undefined;
   MyAvailability: undefined;
 
@@ -155,6 +158,16 @@ function CleanerTabs() {
               component={RoomDetailScreen}
               options={{ headerRight: undefined }}
             />
+            <Stack.Screen
+              name="TaskList"
+              component={TaskListScreen}
+              options={{ headerRight: undefined }}
+            />
+            <Stack.Screen
+              name="TaskDetail"
+              component={TaskDetailScreen}
+              options={{ headerRight: undefined }}
+            />
           </Stack.Navigator>
         )}
       </Tabs.Screen>
@@ -235,6 +248,16 @@ function SupervisorTabs() {
             <Stack.Screen
               name="RoomDetail"
               component={RoomDetailScreen}
+              options={{ headerRight: undefined }}
+            />
+            <Stack.Screen
+              name="TaskList"
+              component={TaskListScreen}
+              options={{ headerRight: undefined }}
+            />
+            <Stack.Screen
+              name="TaskDetail"
+              component={TaskDetailScreen}
               options={{ headerRight: undefined }}
             />
           </Stack.Navigator>

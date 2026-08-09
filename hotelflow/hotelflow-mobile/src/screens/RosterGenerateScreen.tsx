@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, Button, Alert, ScrollView } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation";
-import { generateRosterAI } from "../api";
+import { aiGenerateRoster } from "../api";
 
 type Props = NativeStackScreenProps<RootStackParamList, "RosterGenerate">;
 
@@ -26,7 +26,7 @@ export default function RosterGenerateScreen({ navigation }: Props) {
     try {
       setBusy(true);
       const payload = { week_start, rooms_summary, availability, rules, dry_run };
-      const res = await generateRosterAI(payload);
+      const res = await aiGenerateRoster(payload);
       if (dry_run) {
         Alert.alert("Simulación", "Plan recibido. Revisa consola.");
         console.log("AI dry_run plan:", res);
