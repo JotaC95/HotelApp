@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, FlatList, RefreshControl, TouchableOpacity, Alert, Modal, TextInput } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import * as ImagePicker from "expo-image-picker";
 import { RootStackParamList } from "../navigation";
 import { getClient } from "../api";
 
@@ -14,6 +15,8 @@ type Task = {
     priority:"LOW"|"MEDIUM"|"HIGH"|string;
     status:"PENDING"|"ASSIGNED"|"IN_PROGRESS"|"DONE"|"BLOCKED"|string;
     room:number; assigned_to?: number | null;
+    dnd_seen?: boolean;
+    start_photo?: string | null;
 };
 
 export default function RoomDetailScreen({ route }: Props) {
@@ -71,9 +74,9 @@ export default function RoomDetailScreen({ route }: Props) {
         fd.append("priority", "MEDIUM");
         fd.append("status", "PENDING");
 
-        const res = await client.post(`/tasks/`, fd, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
+        // OJO: no fijar "Content-Type: multipart/form-data" a mano — axios
+        // necesita generar el "boundary" él mismo a partir del FormData.
+        const res = await client.post(`/tasks/`, fd);
 
         setCreating(false);
         setTitle("");
@@ -109,6 +112,40 @@ export default function RoomDetailScreen({ route }: Props) {
         }
     }, []);
 
+    // Foto obligatoria como evidencia del letrero de "No Molestar".
+    const pickDndPhoto = useCallback(async () => {
+        const res = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.7,
+        });
+        if (res.canceled) return null;
+        const a = res.assets[0];
+        return { uri: a.uri, name: a.fileName ?? "dnd.jpg", type: a.mimeType ?? "image/jpeg" };
+    }, []);
+
+    const markDnd = useCallback(async (task: Task) => {
+        const photo = await pickDndPhoto();
+        if (!photo) {
+        Alert.alert("Falta foto", "Debes adjuntar una foto del letrero de No Molestar para continuar.");
+        return;
+        }
+        try {
+        const client = await getClient();
+        const fd = new FormData();
+        fd.append("dnd_seen", "true");
+        fd.append("start_photo", photo as any);
+        // OJO: sin Content-Type manual — mismo motivo que en createQuickTask.
+        const res = await client.post(`/tasks/${task.id}/start_check/`, fd);
+        const updated: Task = res.data;
+        setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)));
+        Alert.alert("Registrado", "No Molestar guardado con evidencia fotográfica.");
+        } catch (e: any) {
+        console.log("dnd check error:", e?.message, e?.response?.status, e?.response?.data);
+        const detail = e?.response?.data?.detail;
+        Alert.alert("Error", detail || "No se pudo registrar el No Molestar.");
+        }
+    }, [pickDndPhoto]);
+
     const renderTask = ({ item }: { item: Task }) => {
         const isDone = item.status === "DONE";
         return (
@@ -119,8 +156,17 @@ export default function RoomDetailScreen({ route }: Props) {
             </View>
             <Text style={{ color: "#374151", marginBottom: 8 }}>
             Estado: {item.status} · Tipo: {item.task_type}
+            {item.dnd_seen ? " · DND ✓" : ""}
             </Text>
-            <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flexDirection: "row", gap: 10, flexWrap: "wrap" }}>
+            <TouchableOpacity
+                onPress={() => markDnd(item)}
+                style={{ backgroundColor: item.dnd_seen ? "#7c3aed" : "#f59e0b", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}
+            >
+                <Text style={{ color: "white", fontWeight: "700" }}>
+                {item.dnd_seen ? "DND registrado" : "No molestar (DND)"}
+                </Text>
+            </TouchableOpacity>
             <TouchableOpacity
                 onPress={() => toggleTaskStatus(item)}
                 style={{ backgroundColor: isDone ? "#f59e0b" : "#16a34a", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}
