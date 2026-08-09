@@ -94,6 +94,51 @@ class HousekeepingTaskViewSet(viewsets.ModelViewSet):
     @extend_schema(
         request=None,
         responses={200: None},
+        description="Registra el inicio de la tarea (foto obligatoria si dnd_seen=true)."
+    )
+    @action(detail=True, methods=["post"], url_path="start_check")
+    def start_check(self, request, pk=None):
+        task = self.get_object()
+        dnd = str(request.data.get("dnd_seen", "")).lower() in ("1", "true", "yes")
+        refused = str(request.data.get("service_refused", "")).lower() in ("1", "true", "yes")
+        photo = request.FILES.get("start_photo")
+
+        if dnd and not photo:
+            return Response(
+                {"detail": "Se requiere start_photo como evidencia cuando dnd_seen es true."},
+                status=400,
+            )
+
+        task.dnd_seen = dnd
+        task.service_refused = refused
+        if photo:
+            task.start_photo = photo
+        if not task.started_at:
+            task.started_at = timezone.now()
+        if task.status in (task.Status.PENDING, task.Status.ASSIGNED):
+            task.status = task.Status.IN_PROGRESS
+        task.save()
+        return Response(self.get_serializer(task).data)
+
+    @extend_schema(
+        request=None,
+        responses={200: None},
+        description="Marca la tarea como finalizada (foto de cierre opcional)."
+    )
+    @action(detail=True, methods=["post"], url_path="finish")
+    def finish(self, request, pk=None):
+        task = self.get_object()
+        photo = request.FILES.get("end_photo")
+        if photo:
+            task.end_photo = photo
+        task.finished_at = timezone.now()
+        task.status = task.Status.DONE
+        task.save()
+        return Response(self.get_serializer(task).data)
+
+    @extend_schema(
+        request=None,
+        responses={200: None},
         description="Asigna automáticamente la tarea al mejor empleado (POST). En GET solo muestra el candidato."
     )
     @action(detail=True, methods=["post", "get"], url_path="auto_assign")

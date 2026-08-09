@@ -164,9 +164,11 @@ export const postJSON = async <T>(url: string, data?: any): Promise<T> => {
 
 export const postForm = async <T>(url: string, form: FormData): Promise<T> => {
   const c = await getClient();
-  const res = await c.post<T>(url, form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  // OJO: no fijar "Content-Type: multipart/form-data" a mano — axios/React
+  // Native necesitan generar el "boundary" ellos mismos a partir del
+  // FormData. Si se fuerza el header sin boundary, Django no puede separar
+  // las partes y el archivo llega vacío/corrupto.
+  const res = await c.post<T>(url, form);
   return res.data;
 };
 

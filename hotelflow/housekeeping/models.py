@@ -65,6 +65,12 @@ class HousekeepingTask(models.Model):
     finished_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Evidencia del check de inicio/fin desde la app móvil (start_check / finish).
+    dnd_seen = models.BooleanField(default=False)
+    service_refused = models.BooleanField(default=False)
+    start_photo = models.ImageField(upload_to="tasks/start", null=True, blank=True)
+    end_photo = models.ImageField(upload_to="tasks/end", null=True, blank=True)
+
     def __str__(self):
         return f"[{self.get_status_display()}] {self.title} - {self.room}"
 

@@ -13,20 +13,29 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hotelflow.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.jpg",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.hotelflow.app"
     },
     "web": {
       "favicon": "./assets/logo.jpg"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "HotelFlow necesita acceder a tus fotos para adjuntar evidencia de las tareas de limpieza (por ejemplo, el cartel de No Molestar).",
+          "cameraPermission": false
+        }
+      ]
     ]
   }
 }
