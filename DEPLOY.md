@@ -130,9 +130,10 @@ que vive solo en el mismo servidor no protege contra la pérdida del servidor.
 ### 2.6 Actualizar la app móvil para producción
 
 Antes de compilar el build de la app para el hotel, actualiza
-`API_BASE_URL` a `https://app.hotelnombre.com/api/housekeeping` y genera el
-build con EAS (`eas build`) según la plataforma del personal del hotel
-(Android/iOS).
+`API_BASE_URL` a `https://app.hotelnombre.com/api/housekeeping`. Para
+generar y enviar ese build a App Store / Google Play (o distribuirlo en
+privado), ver la sección 3 completa más abajo — no es un paso de un día,
+conviene arrancarlo en paralelo al resto del despliegue.
 
 ### 2.7 Checklist antes de dar acceso al cliente
 
@@ -145,7 +146,106 @@ build con EAS (`eas build`) según la plataforma del personal del hotel
 - [ ] Contraseñas de todos los usuarios de prueba/desarrollo rotadas o
       eliminadas antes de crear las cuentas reales del personal del hotel.
 
-## 3. Lo que Docker resuelve — y lo que sigue pendiente
+## 3. Publicar la app móvil (App Store / Google Play)
+
+Este es el paso que el cliente notará más directamente — si el personal del
+hotel no puede instalar la app, nada de lo anterior importa. Hoy el proyecto
+**no está listo para enviarse a ninguna tienda**: falta configuración básica
+y algunos requisitos que Apple/Google exigen para aceptar el envío. Ninguno
+es difícil, pero hay que hacerlos en orden y con margen de tiempo — la
+revisión de Apple sola puede tardar de un día a varios.
+
+### 3.1 Decide primero: tienda pública o distribución privada
+
+| | Tienda pública (App Store + Google Play) | Distribución privada |
+|---|---|---|
+| Cuándo conviene | Cuando el plan es vender a varios hoteles con onboarding self-service | Mientras el producto es de un solo hotel (el caso actual) |
+| Costo/trámite | Cuenta Apple Developer (99 USD/año) + Google Play Console (25 USD pago único) | Apple Business Manager (gratis, pero el hotel debe inscribirse como organización) + Play con acceso restringido |
+| Revisión | En cada release, por Apple/Google | Ninguna revisión pública |
+| Visibilidad | Pública, buscable | Privada, solo para quien se invite |
+
+Para el primer cliente, la distribución privada suele ser el camino más
+rápido y evita exponer el producto a la competencia mientras es un solo
+hotel. Si de todas formas se opta por tienda pública, sigue los pasos de
+abajo igual — son los mismos hasta el punto de envío.
+
+### 3.2 Requisitos previos (una sola vez)
+
+- Cuenta de **Apple Developer Program** (persona u organización) si vas a
+  publicar en iOS, sea por tienda o por Apple Business Manager.
+- Cuenta de **Google Play Console** si vas a publicar en Android.
+- Una **política de privacidad** publicada en una URL pública (puede vivir
+  en el propio dominio del hotel, `https://app.hotelnombre.com/privacidad`)
+  describiendo qué datos recoge la app (cuenta de usuario, fotos de
+  habitaciones/incidentes) y cómo se usan. Ambas tiendas la piden como
+  requisito de envío, incluida la distribución privada.
+
+### 3.3 Configurar el proyecto móvil
+
+En `hotelflow/hotelflow-mobile/app.json`, define los identificadores de la
+app (no existen todavía — sin esto no se puede generar ni un build interno):
+
+```jsonc
+{
+  "expo": {
+    "ios": { "bundleIdentifier": "com.hotelflow.app" },
+    "android": { "package": "com.hotelflow.app" }
+  }
+}
+```
+
+Luego genera la configuración de builds y envío:
+
+```bash
+cd hotelflow/hotelflow-mobile
+npx eas-cli build:configure
+```
+
+Esto crea `eas.json` con perfiles `development` / `preview` / `production`.
+Antes de construir el build de producción, revisa también:
+
+- **Ícono y splash**: `logo.jpg` no cumple la guía de Apple (necesita PNG de
+  1024×1024 sin canal alfa). Genera los assets correctos primero.
+- **Eliminación de cuenta**: Apple exige (guideline 5.1.1(v)) que una app
+  con login permita solicitar la baja de la cuenta desde dentro de la propia
+  app. Añade un botón "Eliminar mi cuenta" en ajustes antes de enviar a
+  revisión — aunque el borrado real lo procese soporte, el punto de entrada
+  tiene que estar en la app.
+- **Fotos de habitaciones/incidentes**: el backend ya soporta subir fotos
+  (`photo_before`, `photo_after`, `photo` en incidentes) pero el móvil no
+  tiene instalado `expo-image-picker` ni `expo-camera` todavía. Es probable
+  que el cliente espere ver esto funcionando en la demo, no solo en la
+  tienda — conviene conectarlo antes de compilar el build de producción.
+
+### 3.4 Build y envío
+
+```bash
+# Build de producción para ambas plataformas
+eas build --platform all --profile production
+
+# Cuenta de demostración: crea un usuario fijo con datos ficticios ANTES
+# de este paso — App Store Connect y Play Console piden credenciales para
+# que el equipo de revisión pruebe el login.
+
+# Envío
+eas submit --platform ios
+eas submit --platform android
+```
+
+Para distribución privada en vez de tienda pública: sube el `.ipa` a Apple
+Business Manager como Custom App (se instala vía MDM o enlace directo en
+los dispositivos del hotel) y usa "acceso restringido"/enlace interno de
+EAS o Play Console para Android — se salta la revisión pública pero sigue
+exigiendo política de privacidad y los mismos identificadores de app.
+
+### 3.5 Después del primer release
+
+- Cambios solo de JavaScript (sin tocar módulos nativos) pueden salir por
+  **EAS Update** sin pasar por revisión completa otra vez.
+- Cambios que sí tocan módulos nativos (agregar `expo-camera`, por ejemplo)
+  necesitan un build y envío nuevos.
+
+## 4. Lo que Docker resuelve — y lo que sigue pendiente
 
 Levantar esto con Docker soluciona directamente varios de los bloqueantes
 críticos de la auditoría: dependencias que antes faltaban en
@@ -161,5 +261,9 @@ Sigue pendiente, y no lo resuelve Docker por sí solo:
 - Pruebas automatizadas y un pipeline de CI.
 - Purgar `db.sqlite3` del historial de Git y rotar credenciales expuestas.
 - Decisión de arquitectura multi-hotel antes de vender a un segundo cliente.
+- Todo lo de la sección 3 (publicación de la app móvil): identificadores de
+  app, `eas.json`, política de privacidad, eliminación de cuenta y captura
+  de fotos — nada de esto lo resuelve Docker, es trabajo aparte en el
+  proyecto móvil.
 
 Ver la auditoría completa para el detalle de cada punto.
