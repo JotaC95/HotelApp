@@ -2,6 +2,9 @@
 
 Aplicación para la **gestión logística de hoteles**, optimizada para mejorar la eficiencia del personal en limpieza, mantenimiento y administración de habitaciones.
 
+> **Cómo arrancar el proyecto (backend con Docker) y cómo desplegarlo en el
+> servidor del hotel:** ver [DEPLOY.md](./DEPLOY.md).
+
 ---
 
 ## 🚀 Características
