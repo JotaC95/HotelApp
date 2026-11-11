@@ -1,33 +1,34 @@
-# HotelFlow — Hotel Operations Prototype
+# HotelFlow — Developer and User Orientation
 
-**Mobile housekeeping workflows backed by a Django REST API**
+HotelFlow is an evolving hotel-operations prototype combining a Django REST backend with an Expo / React Native mobile client. It explores workflows for room status, housekeeping tasks, staff scheduling, inventory, incidents and communication.
 
-HotelFlow explores how hotel teams can coordinate rooms, housekeeping tasks, inventory and staff scheduling in one system. This repository contains both a Python backend and an Expo / React Native mobile application.
+## Choose your starting point
 
-## Why this project exists
+| I want to… | Go to |
+| --- | --- |
+| Understand the architecture | [Architecture](#architecture) |
+| Run the backend | [Backend setup](#backend-setup) |
+| Run the mobile client | [Mobile setup](#mobile-setup) |
+| Explore available API documentation | [API exploration](#api-exploration) |
+| Prepare a secure environment | [Security setup](SECURITY_SETUP.md) |
 
-Hotel operations depend on accurate room status, task assignments and communication across staff. HotelFlow is an evolving prototype for making those workflows easier to track.
-
-## Repository architecture
+## Architecture
 
 ```text
-hotelflow/
-├── hotelflow/          # Django project configuration and URL routing
-├── housekeeping/       # Rooms, tasks, checklists, inventory, incidents, chat
-├── scheduling/         # Staff, availability, shifts, rosters and assignments
-├── accounts/           # Account-related Django app
-├── hotelflow-mobile/   # Expo / React Native mobile client
-├── manage.py
-└── requirements.txt
+Expo / React Native mobile app
+            |
+            | HTTP requests (configure API host)
+            v
+Django REST Framework backend
+   |            |           |
+housekeeping  scheduling    accounts / core
+   |            |           |
+            SQLite (development)
 ```
 
-**Backend:** Django and Django REST Framework, with API routers for rooms, tasks, checklists, staff availability, inventory, incidents and chat. Scheduling endpoints cover zones, skills, leave, rosters, shifts and task assignments. Presence of routes does not imply every workflow has been validated end to end.
+The repository includes `hotelflow/housekeeping/`, `hotelflow/scheduling/`, `hotelflow/accounts/`, `hotelflow/core/` and `hotelflow/hotelflow-mobile/`. These are implemented code areas; end-to-end user workflows have not all been verified.
 
-**Mobile:** Expo SDK 53, React Native, TypeScript, React Navigation, Axios and form validation libraries.
-
-## Development setup
-
-### Backend
+## Backend setup
 
 ```bash
 git clone https://github.com/JotaC95/HotelApp.git
@@ -35,35 +36,56 @@ cd HotelApp/hotelflow
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export DJANGO_SECRET_KEY='replace-with-a-new-development-only-key'
+export DJANGO_SECRET_KEY='replace-with-a-fresh-random-local-secret'
 export DJANGO_ALLOWED_HOSTS='localhost,127.0.0.1'
 python manage.py check
+python manage.py migrate
 python manage.py runserver
 ```
 
-### Mobile
+Generate a fresh secret and review [SECURITY_SETUP.md](SECURITY_SETUP.md) before exposing the service. The environment configuration and dependencies must be checked against your local Python version.
 
-In a second terminal:
+## Mobile setup
+
+From the repository root, in another terminal:
 
 ```bash
-cd HotelApp/hotelflow/hotelflow-mobile
+cd hotelflow/hotelflow-mobile
 npm ci
 npx expo start
 ```
 
-Configure the mobile API base URL for your development machine and device; `localhost` on a physical phone refers to that phone, not your laptop. Review `SECURITY_SETUP.md` before deploying.
+The mobile device must be able to reach the backend over the network. When using a physical device, `localhost` means the device itself; use an appropriate development IP address and update the mobile API configuration. Expo device compatibility and authentication flows need testing.
+
+## API exploration
+
+The root URL configuration declares these routes:
+
+| Path | Purpose |
+| --- | --- |
+| `/admin/` | Django administration |
+| `/api/schema/` | OpenAPI schema endpoint |
+| `/api/docs/` | Swagger UI (drf-spectacular) |
+| `/api/housekeeping/` | Housekeeping and scheduling route groups |
+| `/api/scheduling/` | Scheduling routes |
+| `/api/auth/` | DRF authentication views |
+
+After starting the backend, visit `http://127.0.0.1:8000/api/docs/` to inspect the API schema. Authentication may be required for operations; not every route has a verified sample response.
 
 ## Current status and limitations
 
-- Work in progress; no production reliability or security certification is claimed.
-- Backend and mobile integration, authentication, notifications and role-based access need end-to-end verification.
-- The repository contains a SQLite database file. Review it for sensitive information before sharing data or deploying.
-- Do not use the previously committed Django signing key. Configure a newly generated `DJANGO_SECRET_KEY` securely.
+- Prototype, not a production-certified hotel management system.
+- Do not enter real guest or employee information into public demo environments.
+- A SQLite database file is tracked in the repository; review it before redistribution.
+- User journeys, roles/permissions, push notifications and backend/mobile integration require further verification.
 
-## Next improvements
+## Troubleshooting
 
-Add a system diagram, sanitized demo screenshots, API examples, test results and a walkthrough of a complete room-cleaning workflow.
+- **Backend startup error:** check environment variables, migrations and Python dependencies.
+- **Mobile cannot connect:** confirm backend address, firewall and device/network connectivity.
+- **401/403:** inspect authentication and role permissions; do not bypass them.
+- **Unexpected route:** use `/api/docs/` and inspect URL configuration for the installed revision.
 
-## Engineering value
+## Contributing to documentation
 
-Illustrates full-stack application design for a real operational domain, combining mobile UX, API design, task workflows and scheduling.
+Provide a sanitized screenshot or API example, state the environment used and distinguish verified behavior from proposed features. Never commit tokens, private records or real employee data.
