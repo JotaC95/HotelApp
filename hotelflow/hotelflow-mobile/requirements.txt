@@ -26,7 +26,7 @@ python-decouple==3.8
 PyYAML==6.0.2
 redis==6.4.0
 referencing==0.36.2
-rpds-py==0.27.0
+rpds-py==2026.9.1
 sqlparse==0.5.3
 typing_extensions==4.14.1
 uritemplate==4.2.0
