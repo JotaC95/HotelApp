@@ -28,7 +28,7 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
+    "@babel/core": "^8.1.0",
     "@types/react": "~19.0.10",
     "react-native-dotenv": "^3.4.11",
     "typescript": "~5.8.3"
