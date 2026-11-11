@@ -1,73 +1,69 @@
-# 🏨 HotelFlow
+# HotelFlow — Hotel Operations Prototype
 
-Aplicación para la **gestión logística de hoteles**, optimizada para mejorar la eficiencia del personal en limpieza, mantenimiento y administración de habitaciones.
+**Mobile housekeeping workflows backed by a Django REST API**
 
----
+HotelFlow explores how hotel teams can coordinate rooms, housekeeping tasks, inventory and staff scheduling in one system. This repository contains both a Python backend and an Expo / React Native mobile application.
 
-## 🚀 Características
+## Why this project exists
 
-- 📋 **Listado de habitaciones** con información clave (estado, tamaño, notas).
-- 🔍 **Pantalla de detalles** de cada habitación con conexión a un endpoint backend real.
-- ✅ **Gestión de estados**: limpieza, mantenimiento, disponible, ocupada.
-- 📲 **Interfaz intuitiva** construida en React Native con Expo.
-- 🌐 **Conexión a backend (Django/Flask/otro)** para obtener datos en tiempo real.
-- 🔔 **Notificaciones y alertas** para el personal (pendiente).
+Hotel operations depend on accurate room status, task assignments and communication across staff. HotelFlow is an evolving prototype for making those workflows easier to track.
 
----
+## Repository architecture
 
-## 📂 Estructura del proyecto
+```text
+hotelflow/
+├── hotelflow/          # Django project configuration and URL routing
+├── housekeeping/       # Rooms, tasks, checklists, inventory, incidents, chat
+├── scheduling/         # Staff, availability, shifts, rosters and assignments
+├── accounts/           # Account-related Django app
+├── hotelflow-mobile/   # Expo / React Native mobile client
+├── manage.py
+└── requirements.txt
+```
+
+**Backend:** Django and Django REST Framework, with API routers for rooms, tasks, checklists, staff availability, inventory, incidents and chat. Scheduling endpoints cover zones, skills, leave, rosters, shifts and task assignments. Presence of routes does not imply every workflow has been validated end to end.
+
+**Mobile:** Expo SDK 53, React Native, TypeScript, React Navigation, Axios and form validation libraries.
+
+## Development setup
+
+### Backend
 
 ```bash
-HotelFlow/
-│── src/
-│   ├── screens/
-│   │   ├── RoomListScreen.tsx
-│   │   ├── RoomDetailScreen.tsx
-│   ├── components/
-│   ├── services/
-│   │   └── api.ts   # Conexión al backend
-│── package.json
-│── App.tsx
-│── README.md
+git clone https://github.com/JotaC95/HotelApp.git
+cd HotelApp/hotelflow
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export DJANGO_SECRET_KEY='replace-with-a-new-development-only-key'
+export DJANGO_ALLOWED_HOSTS='localhost,127.0.0.1'
+python manage.py check
+python manage.py runserver
+```
 
+### Mobile
 
-🛠️ Tecnologías utilizadas
-	•	Frontend: React Native + Expo
-	•	Backend (ejemplo): Django REST Framework o Flask API
-	•	Gestión de estado: Context API / Redux (dependiendo de implementación)
-	•	Lenguaje: TypeScript
+In a second terminal:
 
-▶️ Instrucciones de instalación
-	1.	Clonar el repositorio:
-    git clone https://github.com/usuario/HotelFlow.git
-    cd HotelFlow
-	2.	Instalar dependencias:
-    npm install
-	3.	Iniciar el proyecto con Expo:
-    npx expo start
+```bash
+cd HotelApp/hotelflow/hotelflow-mobile
+npm ci
+npx expo start
+```
 
-	4.	Abrir en simulador o dispositivo físico escaneando el QR.
+Configure the mobile API base URL for your development machine and device; `localhost` on a physical phone refers to that phone, not your laptop. Review `SECURITY_SETUP.md` before deploying.
 
+## Current status and limitations
 
-🔌 Conexión al backend
+- Work in progress; no production reliability or security certification is claimed.
+- Backend and mobile integration, authentication, notifications and role-based access need end-to-end verification.
+- The repository contains a SQLite database file. Review it for sensitive information before sharing data or deploying.
+- Do not use the previously committed Django signing key. Configure a newly generated `DJANGO_SECRET_KEY` securely.
 
-En src/services/api.ts configura la URL de tu servidor:
-const API_URL = "http://TU_BACKEND:8000/api";
+## Next improvements
 
-📌 Futuras mejoras
-	•	🧾 Generar reportes automáticos de habitaciones.
-	•	🔔 Integración con WhatsApp o email para notificaciones.
-	•	📊 Panel de estadísticas para administración.
-	•	🧹 Checklists dinámicos para housekeeping.
+Add a system diagram, sanitized demo screenshots, API examples, test results and a walkthrough of a complete room-cleaning workflow.
 
-⸻
+## Engineering value
 
-👨‍💻 Autores
-	•	Jaime Crow – Ingeniería y desarrollo
-	•	Colaboradores del proyecto HotelApp
-
-⸻
-
-📜 Licencia
-
-Este proyecto está bajo la licencia MIT.
+Illustrates full-stack application design for a real operational domain, combining mobile UX, API design, task workflows and scheduling.
