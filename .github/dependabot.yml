@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /hotelflow
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /hotelflow/hotelflow-mobile
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
